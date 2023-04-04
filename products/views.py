@@ -31,6 +31,7 @@ class ProductsListView(TitleMixin, ListView):
         return context
 
 
+
 @login_required
 def basket_add(request, product_id):
     Basket.create_or_update(product_id, request.user)
