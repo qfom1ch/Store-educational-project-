@@ -1,0 +1,42 @@
+services:
+
+  database:
+    image: postgres:15.2-alpine
+    env_file:
+      - ./.env.example
+
+  web-shop:
+    build: .
+    volumes:
+      - ./:/store
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./.env.example
+    command: >
+      sh -c "python3 manage.py migrate 
+      && python3 manage.py loaddata products/fixtures/categories.json
+      && python3 manage.py loaddata products/fixtures/goods.json
+      && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - database
+      - redis
+
+  redis:
+    image: redis:6.0.16-alpine
+    hostname: redis
+    command: --port 5479
+    expose:
+      - 5479
+
+  worker:
+    build: .
+    hostname: worker
+    entrypoint: celery
+    command: -A store worker -l INFO
+    volumes:
+      - ./:/store
+    links:
+      - redis
+    depends_on:
+      - redis
